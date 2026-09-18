@@ -5,7 +5,7 @@ and uses `doc/architectures.md` as the authoritative technical blueprint for thi
 
 Use skills: 
 - /java-convention to apply Java 25 conventions
-- /bce as architercture rules for je Java project
+- /bce as architercture rules for the Java project
 - /sbce as Spec-Driven BCE Workflow
 
 Do not modify the file without express authorisation to:
