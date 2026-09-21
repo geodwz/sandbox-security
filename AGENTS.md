@@ -1,54 +1,108 @@
-# AGENTS.md — sandbox-security
+# Codex Instructions — sandbox-security
 
-Follow every phase from `doc/requirements.md`, implements all steps, respects the all security invariants, 
-and uses `doc/architectures.md` as the authoritative technical blueprint for this project.
+## Scope and activation
 
-Use skills: 
-- /java-convention to apply Java 25 conventions
-- /bce as architercture rules for the Java project
-- /sbce as Spec-Driven BCE Workflow
+This file applies to the whole repository. The more specific instruction file in
+`backend-api/`, `m2m-client/`, or `frontend-vue/` applies in addition when a
+task touches that directory. Use the rules selected by the changed path and
+file type:
 
-Do not modify the file without express authorisation to:
-- `doc/requirements.md`
-- `doc/architectures.md`
+| Paths / file types | Use these instructions |
+| --- | --- |
+| `backend-api/**`, Java source, backend Maven configuration | this file + `backend-api/AGENTS.md` |
+| `m2m-client/**`, Java source, M2M Maven configuration | this file + `m2m-client/AGENTS.md` |
+| `frontend-vue/**`, `.vue`, `.ts`, `.tsx`, Vite/npm configuration | this file + `frontend-vue/AGENTS.md` |
+| `docker/**`, `compose.yaml`, `docker-compose*.yml`, Keycloak realm/config files | this file; preserve the architecture and security invariants below |
+| `doc/**`, `README.md`, Markdown | this file; do not change the authoritative requirements or architecture without explicit authorization |
 
+For a cross-module change, apply every relevant module guide and keep the API,
+frontend, M2M client, Keycloak configuration, and documentation consistent.
 
-## Architecture
+## Authoritative sources
 
-Three independent modules in a flat layout:
+- `doc/requirements.md` defines the product behavior and tutorial scope.
+- `doc/architectures.md` defines the technical architecture and security
+  constraints.
+- `doc/intent-integrity-chain.md` defines the required delivery methodology.
 
-| Module | Stack | Role | Entry |
-|---|---|---|---|
-| `backend-api/` | Spring Boot 4.1 + Java 25, Maven | OAuth 2 resource server (Keycloak) | `src/main/java/BackendApplication.java` |
-| `frontend-vue/` | Vue 3.5 + Vite + Pinia | Auth Code + PKCE flow (ID token → localStorage) | `src/main.ts` |
-| `m2m-client/` | Spring Boot 4.1 + OAuth 2 client | Client Credentials flow | `src/main/java/com/geodwz/m2mclient/ClientApplication.java` |
+Do not modify `doc/requirements.md` or `doc/architectures.md` without explicit
+user authorization. Do not silently replace a stated architecture decision with
+a different framework, flow, or identity model.
 
-No framework wiring between modules. All auth connects to a Keycloak instance via :
-- `docker/keycloak/keycloak.conf`
-- `docker/keycloak/realm-export.json`
+## Intent Integrity Chain (IIC)
 
-## Commands
+Use the gated, test-first workflow from `doc/intent-integrity-chain.md` for
+substantive behavior changes:
+
+1. Analyze intent, boundaries, risks, and acceptance criteria; obtain the
+   required Phase 1 approval before proceeding.
+2. Write human-readable, testable specifications and a test hierarchy; obtain
+   Phase 2 approval.
+3. Construct and run executable tests before implementation. Confirm they fail
+   for the intended missing behavior, then stop for human review and test lock
+   (Phase 3).
+4. After approval, implement only the minimum code needed to pass locked tests.
+   Do not alter locked tests; a required test/specification change reopens the
+   relevant earlier phase.
+5. Harden with security, reliability, lint, dependency, and integration checks.
+
+Maintain scenario → test → code traceability. At phase completion, require a
+clean working tree, a commit, and a tag in the form
+`phase-{n}-{name}-{status}`. Treat a missing/out-of-order tag or uncommitted
+phase output as a gate failure. Do not claim a phase is complete without its
+human approval where IIC requires one.
+
+## Repository architecture
+
+The modules are independent; do not introduce shared runtime code, framework
+wiring, or a different authentication system between them.
+
+- `backend-api/`: Java 25, Spring Boot 4.1.1 servlet/MVC REST API and OAuth2
+  Resource Server.
+- `frontend-vue/`: Vue 3.5, TypeScript, Vite, Vue Router, and Pinia public SPA.
+- `m2m-client/`: Java 25, Spring Boot 4.1.1 OAuth2 Client using Client
+  Credentials.
+- `docker/keycloak/realm-export.json` and `compose.yaml`: local Keycloak
+  infrastructure and identity configuration.
+
+Run commands from the applicable module:
 
 ```bash
-# Start Keycloak (required by all modules)
-cd docker/keycloak  # edit realm, clients, or ports here first
-docker compose up -d
-
-# Run individual modules
-cd backend-api  && mvn spring-boot:run
-cd frontend-vue && npm run dev
-cd m2m-client   && mvn spring-boot:run
+cd backend-api && ./mvnw test
+cd m2m-client && ./mvnw test
+cd frontend-vue && npm run type-check && npm run build
 ```
 
-## Security setup (critical)
+Use the module wrapper rather than assuming a system Maven installation. Run
+the smallest relevant checks first, then appropriate wider checks for shared
+behavior.
 
-- **Keycloak realm** and **users** are created via docker setup scripts. Default users: `alice`/`password`, `bob`/`password`.
-- **M2M client** credentials (`client_id`, `client_secret`) are in `docker/keycloak/realm-export.json`. Do not hardcode — the m2m-client loads them from environment at startup.
-- **Backend authorization** uses a custom scope-to-authority mapper: OAuth2 scopes become `SCOPE_<name>` Spring Authority entries. Roles (U2M) map to `resource_access.project-api.roles` claims → lowercase role names as authorities.
-- **Vue guards**: UI route guards in `frontend-vue/src/router/index.ts` check for ID token presence; they are UX-only, not security boundaries. Actual enforcement is on the backend via `@PreAuthorize`.
+## Non-negotiable security rules
 
-## Gotchas
+- Keycloak is the OAuth2/OIDC Authorization Server; the API is the authoritative
+  security boundary and remains stateless.
+- U2M uses Authorization Code with PKCE S256. Never use Implicit or password
+  grants, or a client secret in the Vue application.
+- M2M uses Client Credentials. Its secret is externally supplied, never
+  committed, hardcoded, or logged.
+- The backend accepts bearer access tokens and validates signature, issuer,
+  expiration, and audience (`project-api`). Do not use deprecated Keycloak
+  Spring adapters or create a second identity system.
+- Keycloak client roles map only through a dedicated converter to `ROLE_*`;
+  OAuth2 scopes map to `SCOPE_*`. Unknown or malformed claims fail safely.
+- Human roles and machine scopes remain distinct. Project operations may allow
+  their explicitly corresponding role *or* scope; `/api/me` and admin endpoints
+  are human-only unless the architecture is explicitly changed.
+- Never log or expose access tokens, refresh tokens, client secrets, passwords,
+  signing details, or stack traces. Return safe 401/403 responses.
+- Frontend guards and role-aware rendering are UX only. Backend endpoint and
+  service-level authorization enforce the policy.
+- Keep CORS origins, methods, and headers explicit; do not use permissive
+  production wildcards.
 
-- Modules have no shared dependencies or code generation between them — each builds independently.
-- Tests use Spring Boot test slices and Vitest; no E2E/browser tests exist.
-- Docker compose for Keycloak is in `docker/keycloak/` (not root) with an empty `compose.yaml` at the root placeholder.
+## Change discipline
+
+Keep controllers and UI components thin, isolate identity-provider-specific
+claim handling, externalize configuration, and favor small reversible changes.
+Update learner-facing documentation when a behavior, setup step, endpoint, or
+security rationale changes. Preserve unrelated user changes in a dirty tree.

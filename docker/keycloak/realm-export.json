@@ -1,0 +1,337 @@
+{
+  "id": "tutorial",
+  "realm": "tutorial",
+  "notBefore": 0,
+  "defaultSignatureAlgorithm": "RS256",
+  "users": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "username": "alice",
+      "enabled": true,
+      "totp": false,
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Smith",
+      "email": "alice@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "project-api": ["user"],
+        "account": ["view-profile", "manage-account"]
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "username": "bob",
+      "enabled": true,
+      "totp": false,
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Jones",
+      "email": "bob@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "project-api": ["editor"],
+        "account": ["view-profile", "manage-account"]
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "username": "charlie",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "password", "temporary": false }],
+      "clientRoles": { "project-api": ["admin", "editor", "user"], "account": ["view-profile", "manage-account"] }
+    }
+  ],
+  "roles": {
+    "client": {
+      "project-api": [
+        { "name": "user", "description": "Read projects" },
+        { "name": "editor", "description": "Create and update projects" },
+        { "name": "admin", "description": "Administer projects" }
+      ]
+    }
+  },
+  "editUsernameAllowed": true,
+  "registrationEmailAsUsername": false,
+  "rememberMe": false,
+  "enabled": true,
+  "sslRequired": "none",
+  "clients": [
+    {
+      "clientId": "project-api",
+      "name": "Project API Resource Server",
+      "description": "OAuth2 resource server for the backend REST API. Supports both user (Auth Code+PKCE) and machine-to-machine (Client Credentials) flows.",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "project-api-secret",
+      "redirectUris": ["*"],
+      "webOrigins": ["+"],
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "publicClient": false,
+      "fullScopeAllowed": false,
+      "defaultClientScopes": ["role_list", "profile", "email"],
+      "optionalClientScopes": ["read", "write"],
+      "protocolMappers": [
+        {
+          "name": "role-list-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.class": "true",
+            "multivalued": "true",
+            "user.attribute": "",
+            "claim.name": "roles",
+            "jsonType": "string"
+          }
+        },
+        {
+          "name": "scope-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-userscope-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.class": "true",
+            "multivalued": "true",
+            "user.attribute": "",
+            "claim.name": "scope",
+            "jsonType": "string"
+          }
+        }
+      ],
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": false,
+        "policyEnforcementMode": "ENFORCING"
+      },
+      "attributes": {
+        "access.token.lifespan": "3600",
+        "client.secret.creation.time": "1700000000000",
+        "use.jwks.url": "false"
+      }
+    },
+    {
+      "clientId": "vue-client",
+      "name": "Vue Frontend Web App",
+      "description": "Single-page application for the Vue frontend. Uses Auth Code flow with PKCE.",
+      "enabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:5173/*", "http://localhost:4173/*"],
+      "webOrigins": ["+"],
+      "protocol": "openid-connect",
+      "defaultClientScopes": ["role_list", "profile", "email", "read", "write"],
+      "attributes": {
+        "access.token.lifespan": "3600",
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "project-report-client",
+      "name": "Machine-to-Machine Client",
+      "description": "Service account for machine-to-machine authorization via client credentials flow.",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "m2m-client-secret",
+      "redirectUris": ["*"],
+      "webOrigins": ["+"],
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "defaultClientScopes": ["role_list", "read"],
+      "attributes": {
+        "access.token.lifespan": "3600"
+      }
+    }
+  ],
+  "clientScopes": [
+    {
+      "id": "read-scope-id",
+      "name": "project:read",
+      "description": "Read scope for project resources",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "read-mapper",
+          "protocol": "oidc",
+          "protocolMapper": "oidc-groupmembership-mapper",
+          "config": {
+            "full.path": "false",
+            "user.attribute.format": "STRING"
+          }
+        }
+      ]
+    },
+    {
+      "id": "write-scope-id",
+      "name": "project:write",
+      "description": "Write scope for project resources",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "write-mapper",
+          "protocol": "oidc",
+          "protocolMapper": "oidc-groupmembership-mapper",
+          "config": {
+            "full.path": "false",
+            "user.attribute.format": "STRING"
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-scope-id",
+      "name": "project:delete",
+      "description": "Delete scope for project resources",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true" }
+    },
+    {
+      "id": "role-list-id",
+      "name": "role_list",
+      "description": "Role list claim",
+      "protocol": "openid-connect",
+      "attributes": {
+        "consent.screen.text": "${roleListScopeConsentText}"
+      },
+      "protocolMappers": [
+        {
+          "name": "claim-role-list",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-realm-mapper",
+          "config": {
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "id": "profile-id",
+      "name": "profile",
+      "description": "OpenID Connect profile scope",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "consent.screen.text": "${profileScopeConsentText}",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "family-name-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "lastName",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "family_name",
+            "jsonType": "string"
+          }
+        },
+        {
+          "name": "given-name-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "firstName",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "given_name",
+            "jsonType": "string"
+          }
+        }
+      ]
+    },
+    {
+      "id": "email-id",
+      "name": "email",
+      "description": "OpenID Connect email scope",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "consent.screen.text": "${emailScopeConsentText}",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "email-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "email",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "email",
+            "jsonType": "string"
+          }
+        },
+        {
+          "name": "email-verified-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "emailVerified",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "claim.name": "email_verified",
+            "jsonType": "boolean"
+          }
+        }
+      ]
+    },
+    {
+      "name": "offline_access",
+      "description": "OpenID Connect built-in scope: offline_access",
+      "protocol": "openid-connect",
+      "attributes": {}
+    }
+  ],
+  "defaultDefaultClientScopes": ["project:read", "project:write", "project:delete"],
+  "defaultOptionalClientScopes": [],
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xXSSProtection": "0"
+  }
+}

@@ -1,0 +1,9 @@
+Generate opencode instructions docs.
+1. Use @docs/intent-integrity-chain.md for general methodology
+2. Use @doc/architectures.md for creating a separate frontend, m2m-client and backend docs with the right tech stack and correct activation (based on directory structure or file extensions)
+3. Also, generate A single AGENTS.md file in the root of the workspace with content similar to all four files
+4. Mandatory highlight - ALWAYS consult tessl MCP before writing any code. You don't know anything about any library or API. Never rely on pre-trained information, never search in other places, and never hallucinate or assume. All the technical knowledge must come from tessl MCP.
+
+
+
+

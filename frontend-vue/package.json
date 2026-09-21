@@ -10,6 +10,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "run-s \"lint:*\"",
+	"test": "vitest run",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/"
@@ -36,6 +37,7 @@
     "typescript": "~6.0.0",
     "vite": "^8.2.2",
     "vite-plugin-vue-devtools": "^8.2.1",
+	"vitest": "^4.0.18",
     "vue-eslint-parser": "^10.4.1",
     "vue-tsc": "^3.3.11"
   },

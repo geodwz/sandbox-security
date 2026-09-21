@@ -24,7 +24,7 @@ Required stack:
 
 ```text
 Java: 25
-Spring Boot: 4.x
+Spring Boot: 4.1.1
 Spring Web
 Spring Security
 Spring OAuth2 Resource Server
@@ -82,7 +82,7 @@ Required stack:
 
 ```text
 Java: 25
-Spring Boot: 4.x
+Spring Boot: 4.1.1
 Spring Web
 Spring Security
 Spring OAuth2 Client
