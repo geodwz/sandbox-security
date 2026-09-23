@@ -2,6 +2,7 @@
 import { RouterLink, RouterView } from 'vue-router'
 import { useAuth } from '@/auth/useAuth'
 const auth = useAuth()
+void auth.completeLogin()
 </script>
 
 <template>

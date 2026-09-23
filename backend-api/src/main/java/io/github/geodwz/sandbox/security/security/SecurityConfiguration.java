@@ -9,12 +9,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
-import org.springframework.security.oauth2.core.OAuth2TokenValidator;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtValidators;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -36,27 +30,16 @@ public class SecurityConfiguration {
 						.requestMatchers("/api/public/**").permitAll()
 						.requestMatchers("/api/**").authenticated()
 						.anyRequest().denyAll())
-				.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakRoleConverter())))
+				.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakJwtAuthenticationConverter())))
 				.build();
 	}
+
 
 	private static void writeError(jakarta.servlet.http.HttpServletResponse response, int status, String error, String message)
 			throws java.io.IOException {
 		response.setStatus(status);
 		response.setContentType("application/json");
 		response.getWriter().write("{\"status\":" + status + ",\"error\":\"" + error + "\",\"message\":\"" + message + "\"}");
-	}
-
-	@Bean
-	JwtDecoder jwtDecoder(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuer,
-			@Value("${security.expected-audience}") String audience) {
-		var decoder = NimbusJwtDecoder.withJwkSetUri(issuer + "/protocol/openid-connect/certs").build();
-		OAuth2TokenValidator<Jwt> audienceValidator = jwt -> jwt.getAudience().contains(audience)
-				? org.springframework.security.oauth2.core.OAuth2TokenValidatorResult.success()
-				: org.springframework.security.oauth2.core.OAuth2TokenValidatorResult.failure(
-						new org.springframework.security.oauth2.core.OAuth2Error("invalid_token", "Wrong audience", null));
-		decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(issuer), audienceValidator));
-		return decoder;
 	}
 
 	@Bean
