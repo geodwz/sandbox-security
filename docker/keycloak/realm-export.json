@@ -164,7 +164,7 @@
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
       "publicClient": false,
-      "defaultClientScopes": ["role_list", "read"],
+      "defaultClientScopes": ["role_list", "project:read"],
       "attributes": {
         "access.token.lifespan": "3600"
       }
